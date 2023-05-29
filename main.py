@@ -1,5 +1,6 @@
 import logging
 import math
+import time
 
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -21,22 +22,22 @@ def get_properties(driver, url):
     url = driver.current_url
     cards = driver.find_elements(By.CLASS_NAME, 'propertyCard')
     for each in cards:
-
+        result.append(get_property_links(each))
     count = 0
-
     try:
         count = int(driver.find_element(By.CLASS_NAME, "searchHeader-resultCount").text)
-
-
     except Exception:
         logging.info("Single Page.")
-    loop = math.ceil(count / 24)
-    for i in range(0, 24):
 
-
-    # property_list = soup.find_all('div', class_='propertyCard')
-
-    return cards
+    count = math.ceil(count / 24)
+    for i in range(1, count):
+        print(i)
+        driver.get(url + f"&index={str(i * 24)}")
+        time.sleep(1)
+        cards = driver.find_elements(By.CLASS_NAME, 'propertyCard')
+        for each in cards:
+            result.append(get_property_links(each))
+    return result
 
 
 def get_property_links(property):
@@ -58,8 +59,8 @@ def main():
 
     sale_url = 'https://www.rightmove.co.uk/property-for-sale.html'
     rent_url = 'https://www.rightmove.co.uk/property-to-rent.html'
-    sale_url = 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=REGION%5E94610&insId=1&radius=0.0&minPrice=&maxPrice=&minBedrooms=&maxBedrooms=&displayPropertyType=&maxDaysSinceAdded=&_includeSSTC=on&sortByPriceDescending=&primaryDisplayPropertyType=&secondaryDisplayPropertyType=&oldDisplayPropertyType=&oldPrimaryDisplayPropertyType=&newHome=&auction=false'
-    rent_url = 'https://www.rightmove.co.uk/property-to-rent/find.html?searchType=RENT&locationIdentifier=REGION%5E94610&insId=1&radius=0.0&minPrice=&maxPrice=&minBedrooms=&maxBedrooms=&displayPropertyType=&maxDaysSinceAdded=&sortByPriceDescending=&_includeLetAgreed=on&primaryDisplayPropertyType=&secondaryDisplayPropertyType=&oldDisplayPropertyType=&oldPrimaryDisplayPropertyType=&letType=&letFurnishType=&houseFlatShare='
+    sale_url = 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=REGION%5E1498&insId=1&radius=0.0&minPrice=&maxPrice=&minBedrooms=&maxBedrooms=&displayPropertyType=&maxDaysSinceAdded=&_includeSSTC=on&sortByPriceDescending=&primaryDisplayPropertyType=&secondaryDisplayPropertyType=&oldDisplayPropertyType=&oldPrimaryDisplayPropertyType=&newHome=&auction=false'
+    rent_url = 'https://www.rightmove.co.uk/property-to-rent/find.html?searchType=RENT&locationIdentifier=REGION%5E1498&insId=1&radius=0.0&minPrice=&maxPrice=&minBedrooms=&maxBedrooms=&displayPropertyType=&maxDaysSinceAdded=&sortByPriceDescending=&_includeLetAgreed=on&primaryDisplayPropertyType=&secondaryDisplayPropertyType=&oldDisplayPropertyType=&oldPrimaryDisplayPropertyType=&letType=&letFurnishType=&houseFlatShare='
 
     sale_properties = get_properties(driver, sale_url)
     # rent_properties = get_properties(driver, rent_url)
