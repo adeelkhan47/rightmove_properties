@@ -1,9 +1,13 @@
+import logging
+import math
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 
 
 def get_properties(driver, url):
+    result = []
     driver.get(url)
     # search_field = driver.find_element(By.ID, 'searchLocation')
     # search_field.send_keys('Watermead, Buckinghamshire')
@@ -14,26 +18,38 @@ def get_properties(driver, url):
     # time.sleep(2)
     # search_button = driver.find_element(By.CLASS_NAME, 'touchsearch-primarybutton')
     # search_button.click()
-    # print(driver.current_url)
-    # headers = {'User-Agent': 'Mozilla/5.0'}
-    # response = requests.get(driver.current_url, headers=headers)
-    # response = requests.get(url, headers=headers)
-    # soup = BeautifulSoup(response.text, 'html.parser')
+    url = driver.current_url
     cards = driver.find_elements(By.CLASS_NAME, 'propertyCard')
+    for each in cards:
+
+    count = 0
+
+    try:
+        count = int(driver.find_element(By.CLASS_NAME, "searchHeader-resultCount").text)
+
+
+    except Exception:
+        logging.info("Single Page.")
+    loop = math.ceil(count / 24)
+    for i in range(0, 24):
+
+
     # property_list = soup.find_all('div', class_='propertyCard')
+
     return cards
 
 
-def get_property_links(property_list):
-    results = []
-    for prop in property_list:
-
+def get_property_links(property):
+    try:
         # print(prop.text)
-        sale_link = prop.find_element(By.CLASS_NAME, 'propertyCard-link')
-        rent_link = prop.find_element(By.CLASS_NAME, 'propertyCard-priceValue')
+        sale_link = property.find_element(By.CLASS_NAME, 'propertyCard-link')
+        rent_link = property.find_element(By.CLASS_NAME, 'propertyCard-priceValue')
         if sale_link and rent_link:
-            results.append(sale_link.get_attribute('href'))
-    return results
+            return (sale_link.get_attribute('href'), rent_link.text)
+        return None
+    except Exception as e:
+        logging.exception(e)
+        return None
 
 
 def main():
@@ -54,7 +70,7 @@ def main():
     rent_links = []
 
     # Properties listed both for sale and rent
-    #both_links = set(sale_links).intersection(set(rent_links))
+    # both_links = set(sale_links).intersection(set(rent_links))
 
     for links in sale_links:
         print(f'Sale link: {links}')
