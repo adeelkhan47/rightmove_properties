@@ -30,7 +30,7 @@ def get_properties(driver, url):
         logging.info("Single Page.")
 
     count = math.ceil(count / 24)
-    for i in range(1, count):
+    for i in range(1, 3):
         print(i)
         driver.get(url + f"&index={str(i * 24)}")
         time.sleep(1)
@@ -66,14 +66,14 @@ def main():
     # rent_properties = get_properties(driver, rent_url)
     rent_properties = []
 
-    sale_links = get_property_links(sale_properties)
+    #sale_links = get_property_links(sale_properties)
     # rent_links = get_property_links(rent_properties)
     rent_links = []
 
     # Properties listed both for sale and rent
     # both_links = set(sale_links).intersection(set(rent_links))
 
-    for links in sale_links:
+    for links in sale_properties:
         print(f'Sale link: {links}')
 
     driver.quit()
