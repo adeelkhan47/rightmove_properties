@@ -2,11 +2,17 @@ import logging
 import math
 import time
 
+from fuzzywuzzy import fuzz
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-
 import pandas as pd
+
+def string_similarity(str1, str2):
+    ratio = fuzz.ratio(str1.lower(), str2.lower())
+    return ratio >= 80
+
+
 def get_properties(driver, url, type):
     result = []
     driver.get(url)
@@ -28,8 +34,7 @@ def get_properties(driver, url, type):
         logging.info("Single Page.")
 
     count = math.ceil(count / 24)
-    for i in range(1, 3):
-        print(i)
+    for i in range(1, 2):
         driver.get(url + f"&index={str(i * 24)}")
         time.sleep(1)
         cards = driver.find_elements(By.CLASS_NAME, 'propertyCard')
@@ -40,11 +45,20 @@ def get_properties(driver, url, type):
 
 def get_property_links(property, type):
     try:
-        # print(prop.text)
+
         sale_link = property.find_element(By.CLASS_NAME, 'propertyCard-link')
+        title = property.find_element(By.CLASS_NAME, 'propertyCard-address')
+        try:
+            beds = property.find_element(By.CLASS_NAME, 'property-information')
+            beds = beds.find_elements(By.CLASS_NAME, 'text')
+            beds = int(beds[1].text)
+        except Exception as e:
+            beds = 0
+
         rent_link = property.find_element(By.CLASS_NAME, 'propertyCard-priceValue')
+
         if sale_link and rent_link:
-            return (sale_link.get_attribute('href'), rent_link.text, type)
+            return type, title.text, beds, sale_link.get_attribute('href'), rent_link.text
         return None
     except Exception as e:
         logging.exception(e)
@@ -57,27 +71,20 @@ def main():
 
     sale_url = 'https://www.rightmove.co.uk/property-for-sale.html'
     rent_url = 'https://www.rightmove.co.uk/property-to-rent.html'
-    # ale_url = 'https://www.rightmove.co.uk/property-for-sale/find.html?searchType=SALE&locationIdentifier=REGION%5E1498&insId=1&radius=0.0&minPrice=&maxPrice=&minBedrooms=&maxBedrooms=&displayPropertyType=&maxDaysSinceAdded=&_includeSSTC=on&sortByPriceDescending=&primaryDisplayPropertyType=&secondaryDisplayPropertyType=&oldDisplayPropertyType=&oldPrimaryDisplayPropertyType=&newHome=&auction=false'
-    # rent_url = 'https://www.rightmove.co.uk/property-to-rent/find.html?searchType=RENT&locationIdentifier=REGION%5E1498&insId=1&radius=0.0&minPrice=&maxPrice=&minBedrooms=&maxBedrooms=&displayPropertyType=&maxDaysSinceAdded=&sortByPriceDescending=&_includeLetAgreed=on&primaryDisplayPropertyType=&secondaryDisplayPropertyType=&oldDisplayPropertyType=&oldPrimaryDisplayPropertyType=&letType=&letFurnishType=&houseFlatShare='
 
     sale_properties = get_properties(driver, sale_url, "Sale")
     rent_properties = get_properties(driver, rent_url, "Rent")
-
-    # sale_links = get_property_links(sale_properties)
-    # rent_links = get_property_links(rent_properties)
-    rent_links = []
-
-    # Properties listed both for sale and rent
-    # both_links = set(sale_links).intersection(set(rent_links))
-    data = {"Property Type": [], "Price": [], "Link": []}
-    for links in sale_properties:
-        data["Property Type"].append(links[2])
-        data["Price"].append(links[1])
-        data["Link"].append(links[0])
-    for links in rent_properties:
-        data["Property Type"].append(links[2])
-        data["Price"].append(links[1])
-        data["Link"].append(links[0])
+    data = {"Title": [], "Beds": [], "Price": [], "Sale Link": [], "Rent Link": []}
+    for sale in sale_properties:
+        for each in rent_properties:
+            if sale[2] == each[2] and string_similarity(sale[1], each[1]):
+                data["Title"].append(sale[1])
+                data["Beds"].append(sale[2])
+                data["Price"].append(sale[4])
+                data["Sale Link"].append(sale[3])
+                data["Rent Link"].append(each[4])
+    print(sale_properties)
+    print(rent_properties)
     df = pd.DataFrame(data)
     df.to_csv('output.csv', index=False)
     driver.quit()
