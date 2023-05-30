@@ -2,22 +2,23 @@ import logging
 import math
 import time
 
+import pandas as pd
 from fuzzywuzzy import fuzz
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
-import pandas as pd
+
 
 def string_similarity(str1, str2):
     ratio = fuzz.ratio(str1.lower(), str2.lower())
     return ratio >= 80
 
 
-def get_properties(driver, url, type):
+def get_properties(driver, url, type, search):
     result = []
     driver.get(url)
     search_field = driver.find_element(By.ID, 'searchLocation')
-    search_field.send_keys('York')
+    search_field.send_keys(search)
 
     search_button = driver.find_element(By.ID, 'search')
     search_button.click()
@@ -34,7 +35,7 @@ def get_properties(driver, url, type):
         logging.info("Single Page.")
 
     count = math.ceil(count / 24)
-    for i in range(1, 2):
+    for i in range(1, count):
         driver.get(url + f"&index={str(i * 24)}")
         time.sleep(1)
         cards = driver.find_elements(By.CLASS_NAME, 'propertyCard')
@@ -71,18 +72,19 @@ def main():
 
     sale_url = 'https://www.rightmove.co.uk/property-for-sale.html'
     rent_url = 'https://www.rightmove.co.uk/property-to-rent.html'
-
-    sale_properties = get_properties(driver, sale_url, "Sale")
-    rent_properties = get_properties(driver, rent_url, "Rent")
-    data = {"Title": [], "Beds": [], "Price": [], "Sale Link": [], "Rent Link": []}
+    search = input("Enter value to search -> ")
+    sale_properties = get_properties(driver, sale_url, "Sale", search)
+    rent_properties = get_properties(driver, rent_url, "Rent", search)
+    data = {"Title": [], "Beds": [], "Sale Price": [], "Rent Price": [], "Sale Link": [], "Rent Link": []}
     for sale in sale_properties:
         for each in rent_properties:
             if sale[2] == each[2] and string_similarity(sale[1], each[1]):
                 data["Title"].append(sale[1])
                 data["Beds"].append(sale[2])
-                data["Price"].append(sale[4])
+                data["Sale Price"].append(sale[4])
+                data["Rent Price"].append(each[4])
                 data["Sale Link"].append(sale[3])
-                data["Rent Link"].append(each[4])
+                data["Rent Link"].append(each[3])
     print(sale_properties)
     print(rent_properties)
     df = pd.DataFrame(data)
