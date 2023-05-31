@@ -36,8 +36,9 @@ def get_properties(driver, url, type, search):
 
     count = math.ceil(count / 24)
     for i in range(1, count):
+        time.sleep(3)
         driver.get(url + f"&index={str(i * 24)}")
-        time.sleep(1)
+        time.sleep(2)
         cards = driver.find_elements(By.CLASS_NAME, 'propertyCard')
         for each in cards:
             result.append(get_property_links(each, type))
